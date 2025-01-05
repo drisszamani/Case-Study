@@ -1,0 +1,84 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven'
+        jdk 'JDK 17'
+    }
+
+    environment {
+        // Utilisez votre registry Docker Hub ou local
+        DOCKER_REGISTRY = 'docker.io/drisszamanii'  // ou 'localhost:5000'
+        VERSION = '1.0.0'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build & Unit Tests') {
+            steps {
+                script {
+                    // Construction de chaque service
+                    ['car', 'client', 'gateway', 'server_eureka'].each { service ->
+                        dir(service) {
+                            sh 'mvn clean package'
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                script {
+                    // Construction des images Docker
+                    dir('docker') {
+                        ['car', 'client', 'gateway', 'eureka'].each { service ->
+                            sh """
+                                docker build -t ${DOCKER_REGISTRY}/${service}-service:${VERSION} \
+                                    -f ${service}/Dockerfile ../${service == 'eureka' ? 'server_eureka' : service}
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Images') {
+            steps {
+                script {
+                    // Si vous utilisez Docker Hub
+                    sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
+
+                    // Push des images
+                    ['car', 'client', 'gateway', 'eureka'].each { service ->
+                        sh "docker push ${DOCKER_REGISTRY}/${service}-service:${VERSION}"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    sh '''
+                        kubectl apply -f k8s/namespace.yaml
+                        kubectl apply -f k8s/config-maps.yaml
+                        kubectl apply -f k8s/secrets.yaml
+                        kubectl apply -f k8s/deployments/
+                        kubectl apply -f k8s/services/
+                    '''
+                }
+            }
+        }
+    }
+}

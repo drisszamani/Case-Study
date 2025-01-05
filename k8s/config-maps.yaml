@@ -1,0 +1,9 @@
+# config-maps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: microservices-config
+  namespace: microservices
+data:
+  EUREKA_SERVER_URL: "http://eureka-server:8761/eureka/"
+  SPRING_PROFILES_ACTIVE: "kubernetes"

@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
-
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.HashMap;
@@ -20,66 +19,28 @@ public class ComparisonTestService {
     private final WebClient webClient;
     private final String BASE_URL = "http://localhost:8888/SERVICE-CLIENT/api/client";
 
-    public Map<String, Map<String, Object>> compareAllMethods() {
-        Map<String, Map<String, Object>> results = new HashMap<>();
-        results.put("RestTemplate", testRestTemplate());
-        results.put("FeignClient", testFeignClient());
-        results.put("WebClient", testWebClient());
-        return results;
-    }
+    public Map<String, Object> compareAllMethods() {
+        Map<String, Object> results = new HashMap<>();
 
-    private Map<String, Object> testRestTemplate() {
-        Map<String, Object> metrics = new HashMap<>();
-        MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
-
-        long startMemory = memoryBean.getHeapMemoryUsage().getUsed();
+        // Test RestTemplate
         long startTime = System.currentTimeMillis();
-        long startCpu = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+        results.put("RestTemplate_Response", restTemplate.getForObject(BASE_URL, Client[].class));
+        results.put("RestTemplate_Time", System.currentTimeMillis() - startTime + "ms");
 
-        restTemplate.getForObject(BASE_URL, Client[].class);
+        // Test FeignClient
+        startTime = System.currentTimeMillis();
+        results.put("FeignClient_Response", feignClient.findAll());
+        results.put("FeignClient_Time", System.currentTimeMillis() - startTime + "ms");
 
-        metrics.put("responseTime", System.currentTimeMillis() - startTime + "ms");
-        metrics.put("memoryUsed", (memoryBean.getHeapMemoryUsage().getUsed() - startMemory) / 1024 + "KB");
-        metrics.put("cpuTime", (ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime() - startCpu) / 1_000_000 + "ms");
-
-        return metrics;
-    }
-
-    private Map<String, Object> testFeignClient() {
-        Map<String, Object> metrics = new HashMap<>();
-        MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
-
-        long startMemory = memoryBean.getHeapMemoryUsage().getUsed();
-        long startTime = System.currentTimeMillis();
-        long startCpu = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-
-        feignClient.findAll();
-
-        metrics.put("responseTime", System.currentTimeMillis() - startTime + "ms");
-        metrics.put("memoryUsed", (memoryBean.getHeapMemoryUsage().getUsed() - startMemory) / 1024 + "KB");
-        metrics.put("cpuTime", (ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime() - startCpu) / 1_000_000 + "ms");
-
-        return metrics;
-    }
-
-    private Map<String, Object> testWebClient() {
-        Map<String, Object> metrics = new HashMap<>();
-        MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
-
-        long startMemory = memoryBean.getHeapMemoryUsage().getUsed();
-        long startTime = System.currentTimeMillis();
-        long startCpu = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-
-        webClient.get()
+        // Test WebClient
+        startTime = System.currentTimeMillis();
+        results.put("WebClient_Response", webClient.get()
                 .uri("/api/client")
                 .retrieve()
                 .bodyToMono(Client[].class)
-                .block();
+                .block());
+        results.put("WebClient_Time", System.currentTimeMillis() - startTime + "ms");
 
-        metrics.put("responseTime", System.currentTimeMillis() - startTime + "ms");
-        metrics.put("memoryUsed", (memoryBean.getHeapMemoryUsage().getUsed() - startMemory) / 1024 + "KB");
-        metrics.put("cpuTime", (ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime() - startCpu) / 1_000_000 + "ms");
-
-        return metrics;
+        return results;
     }
 }
