@@ -1,9 +1,12 @@
-# config-maps.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: microservices-config
-  namespace: microservices
-data:
-  EUREKA_SERVER_URL: "http://eureka-server:8761/eureka/"
-  SPRING_PROFILES_ACTIVE: "kubernetes"
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres-service:5432/carservicedb  # Adjust hostname based on your K8s service name
+    username: root
+    password: driss123
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true

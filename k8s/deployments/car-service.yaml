@@ -1,3 +1,4 @@
+# k8s/deployments/car-service.yaml (remove the check-eureka container)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,8 +14,12 @@ spec:
       labels:
         app: car-service
     spec:
-      imagePullSecrets:
-        - name: regcred
+      serviceAccountName: spring-cloud-kubernetes
+      initContainers:
+        - name: check-mysql
+          image: busybox:1.28
+          command: ['sh', '-c',
+                    'until nc -z mysql-service.microservices.svc.cluster.local 3306; do echo waiting for mysql; sleep 2; done;']
       containers:
         - name: car-service
           image: docker.io/drisszamanii/car-service:1.0.0
@@ -24,21 +29,7 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: "kubernetes"
-            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
-              value: "http://eureka-server:8761/eureka/"
             - name: SPRING_APPLICATION_NAME
               value: "car-service"
             - name: SERVER_PORT
               value: "8082"
-          readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8082
-            initialDelaySeconds: 60
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8082
-            initialDelaySeconds: 60
-            periodSeconds: 10

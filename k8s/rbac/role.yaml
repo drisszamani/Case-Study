@@ -1,0 +1,10 @@
+# k8s/rbac/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: spring-cloud-kubernetes-role
+  namespace: microservices
+rules:
+  - apiGroups: [""]
+    resources: ["services", "pods", "configmaps", "secrets", "endpoints"]
+    verbs: ["get", "list", "watch"]

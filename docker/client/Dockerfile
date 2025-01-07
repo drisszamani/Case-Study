@@ -1,4 +1,4 @@
-# Dans docker/eureka/Dockerfile
+# Dans docker/client/Dockerfile
 FROM openjdk:17-jdk-slim
 WORKDIR /app
 COPY target/*.jar app.jar
