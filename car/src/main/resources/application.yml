@@ -6,10 +6,31 @@ spring:
     name: SERVICE-CAR
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/carservicedb?createDatabaseIfNotExist=true
+    url: jdbc:mysql://mysql-service.microservices.svc.cluster.local:3306/carservicedb
     username: "root"
     password: "driss123"
   jpa:
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
     show-sql: true
+  cloud:
+    kubernetes:
+      discovery:
+        discovery-server-url: https://kubernetes.default.svc:443
+        enabled: true
+      config:
+        enabled: true
+      reload:
+        enabled: true
+
+eureka:
+  client:
+    registerWithEureka: true
+    fetchRegistry: true
+    serviceUrl:
+      defaultZone: http://eureka-service.microservices.svc.cluster.local:8761/eureka/
+  instance:
+    preferIpAddress: true

@@ -1,4 +1,3 @@
-# k8s/deployments/client-service-deployment.yaml (remove the check-eureka container)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -33,3 +32,11 @@ spec:
               value: "client-service"
             - name: SERVER_PORT
               value: "8081"
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mysql://mysql-service.microservices.svc.cluster.local:3306/clientservicedb
+            - name: SPRING_DATASOURCE_USERNAME
+              value: root
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: driss123
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://eureka-service.microservices.svc.cluster.local:8761/eureka/"
