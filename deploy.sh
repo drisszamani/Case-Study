@@ -10,7 +10,7 @@ kubectl apply -f k8s/rbac/service-account.yaml
 
 # Create ConfigMaps and Secrets
 kubectl apply -f k8s/services/configmap.yaml
-kubectl apply -f k8s/services/mysql-configmap.yaml
+kubectl apply -f k8s/services/mysql-init-configmap.yaml
 kubectl apply -f k8s/services/service-discovery-config.yaml
 kubectl apply -f k8s/services/secrets.yaml
 

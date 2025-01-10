@@ -28,6 +28,7 @@ spring:
 
 eureka:
   client:
+    enabled: true
     registerWithEureka: true
     fetchRegistry: true
     serviceUrl:

@@ -4,14 +4,7 @@ metadata:
   name: mysql
   namespace: microservices
 spec:
-  replicas: 1  # Added replica count for scaling
-  volumeMounts:
-    - name: init-script
-      mountPath: /docker-entrypoint-initdb.d
-  volumes:
-    - name: init-script
-      configMap:
-        name: mysql-init-config  # Ensure you have this ConfigMap defined
+  replicas: 1
   selector:
     matchLabels:
       app: mysql
@@ -39,4 +32,11 @@ spec:
             requests:
               memory: "256Mi"
               cpu: "250m"
-      restartPolicy: Always  # Ensures the pod restarts if it crashes
+          volumeMounts:
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: init-script
+          configMap:
+            name: mysql-init-config  # Ensure this ConfigMap exists
+      restartPolicy: Always
