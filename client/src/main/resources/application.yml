@@ -1,11 +1,19 @@
 server:
   port: 8081
+
 spring:
   application:
     name: SERVICE-CLIENT
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://mysql-service:3306/clientservicedb
+    url: jdbc:mysql://localhost:3306/clientservicedb
     username: root
     password: driss123
   jpa:
@@ -13,22 +21,37 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        dialect: org.hibernate.dialect.MySQLDialect
     show-sql: true
+
+eureka:
+  client:
+    enabled: true
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+---
+spring:
+  config:
+    activate:
+      on-profile: k8s
+  datasource:
+    url: jdbc:mysql://mysql-service.microservices.svc.cluster.local:3306/clientservicedb
+    username: root
+    password: driss123
   cloud:
     kubernetes:
       discovery:
-        enabled: false  # Changed to false since we're using Eureka
+        enabled: true
       config:
         enabled: true
       reload:
         enabled: true
+
 eureka:
   client:
-    enabled: false
-    registerWithEureka: true
-    fetchRegistry: true
+    enabled: true
     serviceUrl:
-      defaultZone: http://eureka-service:8761/eureka/
+      defaultZone: http://eureka-service.microservices.svc.cluster.local:8761/eureka/
   instance:
     preferIpAddress: true

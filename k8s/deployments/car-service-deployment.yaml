@@ -19,6 +19,10 @@ spec:
           image: busybox:1.28
           command: ['sh', '-c',
                     'until nc -z mysql-service.microservices.svc.cluster.local 3306; do echo waiting for mysql; sleep 2; done;']
+        - name: check-eureka
+          image: busybox:1.28
+          command: ['sh', '-c',
+                    'until nc -z eureka-service.microservices.svc.cluster.local 8761; do echo waiting for eureka; sleep 2; done;']
       containers:
         - name: car-service
           image: docker.io/drisszamanii/car-service:1.0.0
@@ -38,13 +42,21 @@ spec:
               value: root
             - name: SPRING_DATASOURCE_PASSWORD
               value: driss123
-            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
-              value: "http://eureka-service.microservices.svc.cluster.local:8761/eureka/"
             - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
               value: "org.hibernate.dialect.MySQL8Dialect"
             - name: SPRING_JPA_HIBERNATE_DDL_AUTO
               value: "update"
+            - name: EUREKA_CLIENT_ENABLED
+              value: "true"
+            - name: EUREKA_CLIENT_REGISTER_WITH_EUREKA
+              value: "true"
+            - name: EUREKA_CLIENT_FETCH_REGISTRY
+              value: "true"
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://eureka-service.microservices.svc.cluster.local:8761/eureka/"
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
             - name: SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED
               value: "false"
             - name: SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED
-              value: "true"
+              value: "false"

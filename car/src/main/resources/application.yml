@@ -1,14 +1,22 @@
+# Car Service application.yml
 server:
   port: 8082
 
 spring:
   application:
     name: SERVICE-CAR
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}  # Default to local profile
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://mysql-service.microservices.svc.cluster.local:3306/carservicedb
-    username: "root"
-    password: "driss123"
+    url: jdbc:mysql://localhost:3306/carservicedb
+    username: root
+    password: driss123
   jpa:
     hibernate:
       ddl-auto: update
@@ -16,10 +24,25 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
     show-sql: true
+
+eureka:
+  client:
+    enabled: true
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+---
+spring:
+  config:
+    activate:
+      on-profile: k8s
+  datasource:
+    url: jdbc:mysql://mysql-service.microservices.svc.cluster.local:3306/carservicedb
+    username: root
+    password: driss123
   cloud:
     kubernetes:
       discovery:
-        discovery-server-url: https://kubernetes.default.svc:443
         enabled: true
       config:
         enabled: true
@@ -29,8 +52,6 @@ spring:
 eureka:
   client:
     enabled: true
-    registerWithEureka: true
-    fetchRegistry: true
     serviceUrl:
       defaultZone: http://eureka-service.microservices.svc.cluster.local:8761/eureka/
   instance:
