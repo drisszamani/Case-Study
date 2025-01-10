@@ -4,7 +4,8 @@ metadata:
   name: service-discovery-config
   namespace: microservices
 data:
-  spring.cloud.kubernetes.discovery.discovery-server-url: "https://kubernetes.default.svc:443"
-  spring.cloud.kubernetes.discovery.enabled: "true"
-  spring.cloud.kubernetes.config.enabled: "true"
-  spring.cloud.kubernetes.reload.enabled: "true"
+  spring.cloud.kubernetes.discovery.enabled: "false"
+  eureka.client.serviceUrl.defaultZone: "http://eureka-service:8761/eureka/"
+  eureka.instance.preferIpAddress: "true"
+  eureka.client.register-with-eureka: "true"
+  eureka.client.fetch-registry: "true"

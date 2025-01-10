@@ -40,3 +40,11 @@ spec:
               value: driss123
             - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
               value: "http://eureka-service.microservices.svc.cluster.local:8761/eureka/"
+            - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+              value: "org.hibernate.dialect.MySQL8Dialect"
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+            - name: SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED
+              value: "false"
+            - name: SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED
+              value: "true"
