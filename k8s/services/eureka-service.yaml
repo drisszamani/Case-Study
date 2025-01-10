@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: eureka-server
-  namespace: microservices
+  name: eureka-service
 spec:
   selector:
-    app: eureka-server
+    app: eureka-service
   ports:
-    - port: 8761
+    - protocol: TCP
+      port: 8761
       targetPort: 8761
-  type: ClusterIP
+  type: LoadBalancer

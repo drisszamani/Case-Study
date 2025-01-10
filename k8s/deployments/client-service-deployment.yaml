@@ -1,18 +1,18 @@
-# k8s/deployments/car-service.yaml (remove the check-eureka container)
+# k8s/deployments/client-service-deployment.yaml (remove the check-eureka container)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: car-service
+  name: client-service
   namespace: microservices
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: car-service
+      app: client-service
   template:
     metadata:
       labels:
-        app: car-service
+        app: client-service
     spec:
       serviceAccountName: spring-cloud-kubernetes
       initContainers:
@@ -21,15 +21,15 @@ spec:
           command: ['sh', '-c',
                     'until nc -z mysql-service.microservices.svc.cluster.local 3306; do echo waiting for mysql; sleep 2; done;']
       containers:
-        - name: car-service
-          image: docker.io/drisszamanii/car-service:1.0.0
+        - name: client-service
+          image: docker.io/drisszamanii/client-service:1.0.0
           imagePullPolicy: Always
           ports:
-            - containerPort: 8082
+            - containerPort: 8081
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: "kubernetes"
             - name: SPRING_APPLICATION_NAME
-              value: "car-service"
+              value: "client-service"
             - name: SERVER_PORT
-              value: "8082"
+              value: "8081"
