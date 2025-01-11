@@ -12,7 +12,6 @@ pipeline {
     }
 
     options {
-        // Add timeout and keep build logs
         timeout(time: 1, unit: 'HOURS')
         buildDiscarder(logRotator(numToKeepStr: '10'))
     }
@@ -36,7 +35,6 @@ pipeline {
                 script {
                     ['car', 'client', 'gateway', 'server_eureka'].each { service ->
                         dir(service) {
-                            // Add --no-transfer-progress for cleaner logs
                             sh 'mvn clean package -DskipTests=false --no-transfer-progress'
                         }
                     }
@@ -54,7 +52,6 @@ pipeline {
                         }
                     }
                 }
-                // Archive the test results
                 success {
                     archiveArtifacts artifacts: '**/target/surefire-reports/*.xml', fingerprint: true
                 }
@@ -104,15 +101,13 @@ pipeline {
             }
         }
     }
-       post {
-            always {
-                // Clean workspace after build
-                cleanWs()
-            }
-            failure {
-                // Add failure notification if needed
-                echo 'Pipeline failed! Check the logs for details.'
-            }
+
+    post {
+        always {
+            cleanWs()
+        }
+        failure {
+            echo 'Pipeline failed! Check the logs for details.'
         }
     }
 }
