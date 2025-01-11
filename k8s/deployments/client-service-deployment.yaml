@@ -27,7 +27,7 @@ spec:
             - containerPort: 8081
           env:
             - name: SPRING_PROFILES_ACTIVE
-              value: "kubernetes"
+              value: "k8s"
             - name: SPRING_APPLICATION_NAME
               value: "client-service"
             - name: SERVER_PORT

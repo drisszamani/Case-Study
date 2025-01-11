@@ -4,7 +4,7 @@ server:
 
 spring:
   application:
-    name: SERVICE-CAR
+    name: car-service
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}  # Default to local profile
 
@@ -43,7 +43,7 @@ spring:
   cloud:
     kubernetes:
       discovery:
-        enabled: true
+        enabled: false
       config:
         enabled: true
       reload:
@@ -56,3 +56,14 @@ eureka:
       defaultZone: http://eureka-service.microservices.svc.cluster.local:8761/eureka/
   instance:
     preferIpAddress: true
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: "*"
+      endpoint:
+        health:
+          show-details: always
+      health:
+        probes:
+          enabled: true

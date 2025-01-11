@@ -1,9 +1,10 @@
+#client-service(application.yml)
 server:
   port: 8081
 
 spring:
   application:
-    name: SERVICE-CLIENT
+    name: client-service
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
 

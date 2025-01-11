@@ -1,10 +1,21 @@
 server:
   port: 8761
 
+spring:
+  application:
+    name: eureka-server
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:k8s}
+
 eureka:
   client:
     register-with-eureka: false
     fetch-registry: false
+  instance:
+    hostname: ${HOSTNAME}.eureka-service.microservices.svc.cluster.local
+    preferIpAddress: true
+  server:
+    enableSelfPreservation: false
 
 logging:
   level:

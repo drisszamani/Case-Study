@@ -31,7 +31,7 @@ spec:
             - containerPort: 8082
           env:
             - name: SPRING_PROFILES_ACTIVE
-              value: "kubernetes"
+              value: "k8s"
             - name: SPRING_APPLICATION_NAME
               value: "car-service"
             - name: SERVER_PORT
