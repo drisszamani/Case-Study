@@ -3,6 +3,7 @@ package com.example.car.controllers;
 import com.example.car.models.CarResponse;
 import com.example.car.services.CarService;
 import com.example.car.services.ComparisonTestService;
+import com.example.car.services.PerformanceTestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -17,8 +18,11 @@ public class CarController {
     @Autowired
     private ComparisonTestService comparisonTestService;
 
+    @Autowired
+    private PerformanceTestService performanceTestService;  // Added this line
+
     @GetMapping
-    public List<CarResponse> findAll() {
+    public List findAll() {
         return carService.findAll();
     }
 
@@ -28,7 +32,12 @@ public class CarController {
     }
 
     @GetMapping("/compare")
-    public Map<String, Object> compareClients() {
+    public Map compareClients() {
         return comparisonTestService.compareAllMethods();
+    }
+
+    @GetMapping("/performance")
+    public Map runPerformanceTests() {
+        return performanceTestService.runPerformanceTests();
     }
 }
