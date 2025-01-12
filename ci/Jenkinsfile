@@ -59,13 +59,18 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    dir('docker') {
-                        ['car', 'client', 'gateway', 'eureka'].each { service ->
-                            sh """
-                                docker build -t ${DOCKER_REGISTRY}/${service}-service:${VERSION} \
-                                    -f ${service}/Dockerfile ../${service == 'eureka' ? 'server_eureka' : service}
-                            """
-                        }
+                    def services = [
+                        [name: 'car', dir: 'car'],
+                        [name: 'client', dir: 'client'],
+                        [name: 'gateway', dir: 'gateway'],
+                        [name: 'eureka', dir: 'server_eureka']
+                    ]
+
+                    services.each { service ->
+                        sh """
+                            docker build -t ${DOCKER_REGISTRY}/${service.name}-service:${VERSION} \
+                                -f docker/${service.name}/Dockerfile ${service.dir}
+                        """
                     }
                 }
             }
