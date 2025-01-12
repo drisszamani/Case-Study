@@ -31,10 +31,16 @@ pipeline {
 
         stage('Clean Workspace') {
             steps {
-                sh '''
-                    mvn clean
-                    rm -rf ~/.m2/repository/com/example/
-                '''
+                script {
+                    def services = ['car', 'client', 'gateway', 'server_eureka']
+
+                    for (service in services) {
+                        dir(service) {
+                            sh "mvn clean"
+                        }
+                    }
+                    sh 'rm -rf ~/.m2/repository/com/example/'
+                }
             }
         }
 
