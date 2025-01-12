@@ -8,10 +8,26 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
+  cloud:
+    discovery:
+      enabled: false
+    kubernetes:
+      enabled: false
+    loadbalancer:
+      enabled: false
 
 eureka:
   client:
     enabled: false
+    register-with-eureka: false
+    fetch-registry: false
 
 server:
   port: 0
+
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 5000
