@@ -2,28 +2,14 @@ spring:
   datasource:
     url: jdbc:h2:mem:testdb
     driver-class-name: org.h2.Driver
-    username: sa
-    password:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
-    hibernate:
-      ddl-auto: create-drop
-  cloud:
-    discovery:
-      enabled: false
-    kubernetes:
-      enabled: false
-    loadbalancer:
-      enabled: false
 
 eureka:
   client:
     enabled: false
     register-with-eureka: false
     fetch-registry: false
-
-server:
-  port: 0
 
 feign:
   client:

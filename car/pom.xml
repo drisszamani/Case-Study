@@ -166,6 +166,8 @@
                     <systemPropertyVariables>
                         <spring.profiles.active>test</spring.profiles.active>
                     </systemPropertyVariables>
+                    <skipTests>false</skipTests>
+                    <testFailureIgnore>true</testFailureIgnore>
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>

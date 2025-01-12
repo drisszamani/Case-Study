@@ -35,7 +35,8 @@ pipeline {
                 script {
                     ['car', 'client', 'gateway', 'server_eureka'].each { service ->
                         dir(service) {
-                            sh 'mvn clean package -DskipTests=false --no-transfer-progress'
+                            // Add -X for debug output
+                            sh 'mvn clean test -X --no-transfer-progress'
                         }
                     }
                 }
@@ -51,9 +52,6 @@ pipeline {
                             )
                         }
                     }
-                }
-                success {
-                    archiveArtifacts artifacts: '**/target/surefire-reports/*.xml', fingerprint: true
                 }
             }
         }
