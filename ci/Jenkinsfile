@@ -50,32 +50,8 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                script {
-                    try {
-                        withKubeConfig([
-                            credentialsId: 'kubeconfig',
-                            serverUrl: 'YOUR_KUBERNETES_API_SERVER',
-                            contextName: 'YOUR_CONTEXT'
-                        ]) {
-                            sh '''
-                                echo "Validating kubeconfig..."
-                                kubectl config view
-                                kubectl get nodes
-
-                                echo "Applying Kubernetes configurations..."
-                                kubectl apply -f k8s/services/namespace.yaml
-                                kubectl apply -f k8s/rbac/
-                                kubectl apply -f k8s/services/
-                                kubectl apply -f k8s/deployments/
-                            '''
-                        }
-                    } catch (Exception e) {
-                        echo "Deployment failed. Fetching events..."
-                        sh '''
-                            kubectl get events --sort-by=.metadata.creationTimestamp
-                        '''
-                        error "Deployment failed: ${e.message}"
-                    }
+                withKubeConfig([credentialsId: 'kubeconfig']) {
+                    sh 'kubectl apply -f k8s/'
                 }
             }
         }
