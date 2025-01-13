@@ -18,10 +18,10 @@ pipeline {
                     def services = ['car', 'client', 'gateway', 'server_eureka']
                     services.each { service ->
                         dir(service) {
-                            withMaven(maven: 'Maven_3.9.9') {
+                            withMaven(maven: 'Maven_3.9.9', 
+                                    options: [junitPublisher(ignoreAttachments: false)]) {
                                 sh """
-                                    mvn -B clean package -DskipTests
-                                    mvn -B test
+                                    mvn clean verify -Dspring.profiles.active=test
                                 """
                             }
                         }
@@ -30,7 +30,20 @@ pipeline {
             }
             post {
                 always {
-                    junit '**/target/surefire-reports/*.xml'
+                    junit(
+                        allowEmptyResults: true,
+                        keepLongStdio: true,
+                        testResults: '**/target/surefire-reports/TEST-*.xml'
+                    )
+                }
+                failure {
+                    script {
+                        def testReports = findFiles(glob: '**/target/surefire-reports/*.txt')
+                        testReports.each { report ->
+                            echo "Test Failure Details from ${report.path}:"
+                            sh "cat ${report.path}"
+                        }
+                    }
                 }
             }
         }
@@ -51,7 +64,12 @@ pipeline {
         stage('Deploy') {
             steps {
                 withKubeConfig([credentialsId: 'kubeconfig']) {
-                    sh 'kubectl apply -f k8s/'
+                    sh '''
+                        kubectl apply -f k8s/services/namespace.yaml
+                        kubectl apply -f k8s/rbac/
+                        kubectl apply -f k8s/services/
+                        kubectl apply -f k8s/deployments/
+                    '''
                 }
             }
         }
@@ -60,6 +78,9 @@ pipeline {
     post {
         always {
             cleanWs()
+        }
+        failure {
+            echo 'Pipeline failed! Check test reports for details.'
         }
     }
 }
