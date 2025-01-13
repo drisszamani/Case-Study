@@ -7,18 +7,26 @@ pipeline {
     }
 
     environment {
-        MAVEN_OPTS = '-Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.count=3'
+        DOCKER_REGISTRY = 'docker.io/drisszamanii'
+        VERSION = '1.0.0'
     }
 
     stages {
         stage('Build & Test') {
             steps {
-                sh '''
-                    cd car && mvn clean package
-                    cd ../client && mvn clean package
-                    cd ../gateway && mvn clean package
-                    cd ../server_eureka && mvn clean package
-                '''
+                script {
+                    def services = ['car', 'client', 'gateway', 'server_eureka']
+                    services.each { service ->
+                        dir(service) {
+                            withMaven(maven: 'Maven_3.9.9') {
+                                sh """
+                                    mvn -B clean package -DskipTests
+                                    mvn -B test
+                                """
+                            }
+                        }
+                    }
+                }
             }
             post {
                 always {
@@ -29,21 +37,53 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                sh '''
-                    cd car && docker build -t drisszamanii/car:latest -f ../docker/car/Dockerfile .
-                    cd ../client && docker build -t drisszamanii/client:latest -f ../docker/client/Dockerfile .
-                    cd ../gateway && docker build -t drisszamanii/gateway:latest -f ../docker/gateway/Dockerfile .
-                    cd ../server_eureka && docker build -t drisszamanii/eureka:latest -f ../docker/eureka/Dockerfile .
-                '''
+                script {
+                    def services = ['car', 'client', 'gateway', 'server_eureka']
+                    services.each { service ->
+                        dir(service) {
+                            sh "docker build -t ${DOCKER_REGISTRY}/${service}:${VERSION} -f ../docker/${service}/Dockerfile ."
+                        }
+                    }
+                }
             }
         }
 
         stage('Deploy') {
             steps {
-                withKubeConfig([credentialsId: 'kubeconfig']) {
-                    sh 'kubectl apply -f k8s/'
+                script {
+                    try {
+                        withKubeConfig([
+                            credentialsId: 'kubeconfig',
+                            serverUrl: 'YOUR_KUBERNETES_API_SERVER',
+                            contextName: 'YOUR_CONTEXT'
+                        ]) {
+                            sh '''
+                                echo "Validating kubeconfig..."
+                                kubectl config view
+                                kubectl get nodes
+
+                                echo "Applying Kubernetes configurations..."
+                                kubectl apply -f k8s/services/namespace.yaml
+                                kubectl apply -f k8s/rbac/
+                                kubectl apply -f k8s/services/
+                                kubectl apply -f k8s/deployments/
+                            '''
+                        }
+                    } catch (Exception e) {
+                        echo "Deployment failed. Fetching events..."
+                        sh '''
+                            kubectl get events --sort-by=.metadata.creationTimestamp
+                        '''
+                        error "Deployment failed: ${e.message}"
+                    }
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
         }
     }
 }
