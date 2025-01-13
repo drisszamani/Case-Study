@@ -3,11 +3,22 @@ server:
 
 spring:
   application:
-    name: Gateway
+    name: gateway
   cloud:
-    discovery:
-      enabled: true
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lowerCaseServiceId: true
+    kubernetes:
+      discovery:
+        enabled: true
+      config:
+        enabled: true
 
 eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://eureka-service:8761/eureka/
   instance:
-    hostname: localhost
+    preferIpAddress: true
