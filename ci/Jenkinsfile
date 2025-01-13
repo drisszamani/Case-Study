@@ -7,26 +7,18 @@ pipeline {
     }
 
     environment {
-        DOCKER_REGISTRY = 'docker.io/drisszamanii'
-        VERSION = '1.0.0'
+        MAVEN_OPTS = '-Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.count=3'
     }
 
     stages {
         stage('Build & Test') {
             steps {
-                script {
-                    def services = ['car', 'client', 'gateway', 'server_eureka']
-                    services.each { service ->
-                        dir(service) {
-                            withMaven(maven: 'Maven_3.9.9') {
-                                sh """
-                                    mvn -B clean package -DskipTests
-                                    mvn -B test
-                                """
-                            }
-                        }
-                    }
-                }
+                sh '''
+                    cd car && mvn clean package
+                    cd ../client && mvn clean package
+                    cd ../gateway && mvn clean package
+                    cd ../server_eureka && mvn clean package
+                '''
             }
             post {
                 always {
@@ -37,14 +29,12 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                script {
-                    def services = ['car', 'client', 'gateway', 'server_eureka']
-                    services.each { service ->
-                        dir(service) {
-                            sh "docker build -t ${DOCKER_REGISTRY}/${service}:${VERSION} -f ../docker/${service}/Dockerfile ."
-                        }
-                    }
-                }
+                sh '''
+                    cd car && docker build -t drisszamanii/car:latest -f ../docker/car/Dockerfile .
+                    cd ../client && docker build -t drisszamanii/client:latest -f ../docker/client/Dockerfile .
+                    cd ../gateway && docker build -t drisszamanii/gateway:latest -f ../docker/gateway/Dockerfile .
+                    cd ../server_eureka && docker build -t drisszamanii/eureka:latest -f ../docker/eureka/Dockerfile .
+                '''
             }
         }
 
@@ -54,12 +44,6 @@ pipeline {
                     sh 'kubectl apply -f k8s/'
                 }
             }
-        }
-    }
-
-    post {
-        always {
-            cleanWs()
         }
     }
 }
