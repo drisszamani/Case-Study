@@ -28,13 +28,8 @@ public class PerformanceTestService {
     public Map<String, Object> runPerformanceTests() {
         Map<String, Object> results = new HashMap<>();
 
-        // 4.12.1 Performance (Response Time and Throughput)
         results.putAll(testResponseTimeAndThroughput());
-
-        // 4.12.2 Resource Consumption
         results.putAll(testResourceConsumption());
-
-        // 4.12.3 Energy Consumption
         results.putAll(testEnergyConsumption());
 
         return results;
@@ -42,21 +37,18 @@ public class PerformanceTestService {
 
     private Map<String, Object> testResponseTimeAndThroughput() {
         Map<String, Object> metrics = new HashMap<>();
-        int numberOfRequests = 1000; // As per documentation: 10 to 1000 requests
+        int numberOfRequests = 1000;
 
-        // Test RestTemplate
         TestResult restTemplateResult = performLoadTest(numberOfRequests, () ->
                 restTemplate.getForObject(BASE_URL, Client[].class));
         metrics.put("RestTemplate_ResponseTime", restTemplateResult.avgResponseTime);
         metrics.put("RestTemplate_Throughput", restTemplateResult.throughput);
 
-        // Test Feign Client
         TestResult feignResult = performLoadTest(numberOfRequests, () ->
                 feignClient.findAll());
         metrics.put("FeignClient_ResponseTime", feignResult.avgResponseTime);
         metrics.put("FeignClient_Throughput", feignResult.throughput);
 
-        // Test WebClient
         TestResult webClientResult = performLoadTest(numberOfRequests, () ->
                 webClient.get()
                         .uri("/api/client")
@@ -72,21 +64,17 @@ public class PerformanceTestService {
     private Map<String, Object> testResourceConsumption() {
         Map<String, Object> metrics = new HashMap<>();
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
-        OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
 
-        // Test RestTemplate
         ResourceMetrics restTemplateMetrics = measureResourceUsage(() ->
                 restTemplate.getForObject(BASE_URL, Client[].class));
         metrics.put("RestTemplate_CPU", restTemplateMetrics.cpuUsage);
         metrics.put("RestTemplate_Memory", restTemplateMetrics.memoryUsage);
 
-        // Test Feign Client
         ResourceMetrics feignMetrics = measureResourceUsage(() ->
                 feignClient.findAll());
         metrics.put("FeignClient_CPU", feignMetrics.cpuUsage);
         metrics.put("FeignClient_Memory", feignMetrics.memoryUsage);
 
-        // Test WebClient
         ResourceMetrics webClientMetrics = measureResourceUsage(() ->
                 webClient.get()
                         .uri("/api/client")
@@ -103,7 +91,6 @@ public class PerformanceTestService {
         Map<String, Object> metrics = new HashMap<>();
         int requestsPerBatch = 1000;
 
-        // Estimate energy consumption based on CPU utilization and duration
         metrics.put("RestTemplate_Energy", measureEnergyConsumption(() ->
                 restTemplate.getForObject(BASE_URL, Client[].class), requestsPerBatch));
 
@@ -128,11 +115,9 @@ public class PerformanceTestService {
         for (int i = 0; i < numberOfRequests; i++) {
             executor.submit(() -> {
                 try {
-                    long requestStart = System.currentTimeMillis();
                     operation.run();
                     successfulRequests.incrementAndGet();
-                } catch (Exception e) {
-                    // Log error
+                } catch (Exception ignored) {
                 }
             });
         }
@@ -161,22 +146,19 @@ public class PerformanceTestService {
         long endMemory = memoryBean.getHeapMemoryUsage().getUsed();
         long endCpuTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 
-        double cpuUsage = (endCpuTime - startCpuTime) / 1_000_000.0; // Convert to ms
-        double memoryUsage = (endMemory - startMemory) / (1024.0 * 1024.0); // Convert to MB
+        double cpuUsage = (endCpuTime - startCpuTime) / 1_000_000.0;
+        double memoryUsage = (endMemory - startMemory) / (1024.0 * 1024.0);
 
         return new ResourceMetrics(cpuUsage, memoryUsage);
     }
 
     private double measureEnergyConsumption(Runnable operation, int requests) {
-        // Simplified energy consumption estimation based on CPU usage and time
         ResourceMetrics metrics = measureResourceUsage(() -> {
             for (int i = 0; i < requests; i++) {
                 operation.run();
             }
         });
 
-        // Rough estimation: Energy (Wh) = Power (W) * Time (h)
-        // Assuming average CPU power consumption of 50W at full load
         return (metrics.cpuUsage / 100.0) * 50.0 * (metrics.cpuUsage / 3600000.0);
     }
 
