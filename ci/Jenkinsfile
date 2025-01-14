@@ -1,120 +1,23 @@
 pipeline {
-   agent any
+    agent any
 
-   tools {
-       jdk 'JDK 17'
-       maven 'Maven_3.9.9'
-   }
+    tools {
+        jdk 'JDK 17'
+        maven 'Maven_3.9.9'
+    }
 
-   environment {
-       DOCKER_REGISTRY = 'docker.io/drisszamanii'
-       VERSION = '1.0.0'
-   }
-
-   options {
-       timeout(time: 60, unit: 'MINUTES')
-       disableConcurrentBuilds()
-   }
-
-   stages {
-       stage('Build & Test') {
-           options {
-               timeout(time: 10, unit: 'MINUTES')
-           }
-           steps {
-               script {
-                   def services = ['car', 'client', 'gateway', 'server_eureka']
-                   services.each { service ->
-                       dir(service) {
-                           withMaven(
-                               maven: 'Maven_3.9.9',
-                               options: [junitPublisher(ignoreAttachments: false)],
-                               mavenOpts: '-Xmx1024m'
-                           ) {
-                               sh """
-                                   mvn clean verify \
-                                       -Dspring.profiles.active=test \
-                                       -Dmaven.test.failure.ignore=true \
-                                       -B
-                               """
-                           }
-                       }
-                   }
-               }
-           }
-           post {
-               always {
-                   junit(
-                       allowEmptyResults: true,
-                       keepLongStdio: true,
-                       testResults: '**/target/surefire-reports/TEST-*.xml',
-                       skipMarkingBuildUnstable: true
-                   )
-               }
-               failure {
-                   script {
-                       def testReports = findFiles(glob: '**/target/surefire-reports/*.txt')
-                       testReports.each { report ->
-                           echo "Test Failure Details from ${report.path}:"
-                           sh "cat ${report.path}"
-                       }
-                       archiveArtifacts(
-                           artifacts: '**/target/surefire-reports/*.txt',
-                           allowEmptyArchive: true
-                       )
-                   }
-               }
-           }
-       }
-
-       stage('Build Docker Images') {
-           steps {
-               script {
-                   def services = ['car', 'client', 'gateway', 'server_eureka']
-                   services.each { service ->
-                       dir(service) {
-                           sh """
-                               docker build \
-                                   -t ${DOCKER_REGISTRY}/${service}:${VERSION} \
-                                   -f ../docker/${service}/Dockerfile .
-                           """
-                       }
-                   }
-               }
-           }
-       }
-
-       stage('Deploy') {
-           steps {
-               withKubeConfig([credentialsId: 'kubeconfig']) {
-                   sh '''
-                       kubectl apply -f k8s/services/namespace.yaml
-                       kubectl apply -f k8s/rbac/
-                       kubectl apply -f k8s/services/
-                       kubectl apply -f k8s/deployments/
-                   '''
-               }
-           }
-       }
-   }
-
-   post {
-       always {
-           cleanWs()
-       }
-       success {
-           echo 'Pipeline completed successfully!'
-       }
-       failure {
-           echo 'Pipeline failed! Check test reports and logs for details.'
-           emailext (
-               subject: "Pipeline Failed: ${currentBuild.fullDisplayName}",
-               body: "Pipeline failure in build ${env.BUILD_URL}",
-               recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-           )
-       }
-       unstable {
-           echo 'Pipeline is unstable. Check test results.'
-       }
-   }
+    stages {
+        stage('Test') {
+            steps {
+                dir('car') {
+                    sh 'mvn clean test -Dspring.profiles.active=test -B'
+                }
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+    }
 }
