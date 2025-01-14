@@ -20,9 +20,7 @@ pipeline {
                         dir(service) {
                             withMaven(maven: 'Maven_3.9.9',
                                     options: [junitPublisher(ignoreAttachments: false)]) {
-                                sh """
-                                    mvn clean verify -Dspring.profiles.active=test
-                                """
+                                sh "mvn clean verify -Dspring.profiles.active=test"
                             }
                         }
                     }
