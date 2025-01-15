@@ -1,36 +1,57 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven'  // Make sure this matches your Maven tool name in Jenkins config
+        jdk 'JDK17'    // Make sure this matches your JDK tool name in Jenkins config
+    }
+
     stages {
-        stage('Build') {
+        stage('Checkout') {
             steps {
-                sh 'mvn clean package'
+                // Clean workspace before build
+                cleanWs()
+                // Checkout from your repository
+                checkout scm
             }
         }
 
-        stage('Unit Tests') {
+        stage('Build') {
             steps {
-                sh 'mvn test'
+                dir('car') {  // Change directory to where pom.xml is located
+                    sh 'mvn clean package -DskipTests'
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                dir('car') {
+                    sh 'mvn test'
+                }
             }
         }
 
         stage('Performance Tests') {
             steps {
-                sh 'mvn verify -Pperformance-tests'
-                junit '**/target/jmeter/results/*.xml'
+                dir('car') {
+                    sh 'mvn verify -Pperformance-tests'
+                }
             }
         }
     }
 
     post {
         always {
+            junit '**/target/surefire-reports/*.xml'
+
             publishHTML([
                 allowMissing: false,
                 alwaysLinkToLastBuild: true,
                 keepAll: true,
-                reportDir: 'target/jmeter/reports',
+                reportDir: 'car/target/site/jacoco',
                 reportFiles: 'index.html',
-                reportName: 'Performance Test Report'
+                reportName: 'Coverage Report'
             ])
         }
     }
