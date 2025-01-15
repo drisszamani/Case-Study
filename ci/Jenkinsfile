@@ -1,58 +1,158 @@
 pipeline {
-    agent any
+   agent any
 
-    tools {
-        maven 'Maven'  // Make sure this matches your Maven tool name in Jenkins config
-        jdk 'JDK17'    // Make sure this matches your JDK tool name in Jenkins config
-    }
+   tools {
+       jdk 'JDK 17'
+       maven 'Maven_3.9.9'
+   }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                // Clean workspace before build
-                cleanWs()
-                // Checkout from your repository
-                checkout scm
-            }
-        }
+   environment {
+       DOCKER_REGISTRY = 'docker.io/drisszamanii'
+       VERSION = '1.0.0'
+   }
 
-        stage('Build') {
-            steps {
-                dir('car') {  // Change directory to where pom.xml is located
-                    sh 'mvn clean package -DskipTests'
-                }
-            }
-        }
+   options {
+       timeout(time: 60, unit: 'MINUTES')
+       disableConcurrentBuilds()
+   }
 
-        stage('Test') {
-            steps {
-                dir('car') {
-                    sh 'mvn test'
-                }
-            }
-        }
+   stages {
+       stage('Build & Test') {
+           options {
+               timeout(time: 10, unit: 'MINUTES')
+           }
+           steps {
+               script {
+                   def services = ['car', 'client', 'gateway', 'server_eureka']
+                   services.each { service ->
+                       dir(service) {
+                           withMaven(
+                               maven: 'Maven_3.9.9',
+                               options: [junitPublisher(ignoreAttachments: false)],
+                               mavenOpts: '-Xmx1024m'
+                           ) {
+                               sh """
+                                   mvn clean verify \
+                                       -Dspring.profiles.active=test \
+                                       -Dmaven.test.failure.ignore=true \
+                                       -B
+                               """
+                           }
 
-        stage('Performance Tests') {
-            steps {
-                dir('car') {
-                    sh 'mvn verify -Pperformance-tests'
-                }
-            }
-        }
-    }
+                           // Run performance tests specifically for car service
+                           if (service == 'car') {
+                               sh """
+                                   mvn verify -Pperformance-tests \
+                                       -Dspring.profiles.active=test \
+                                       -Djmeter.target.host=localhost \
+                                       -Djmeter.target.port=8888
+                               """
 
-    post {
-        always {
-            junit '**/target/surefire-reports/*.xml'
+                               // Archive performance test results
+                               archiveArtifacts artifacts: 'target/jmeter/results/*.jtl'
+                               publishHTML([
+                                   allowMissing: false,
+                                   alwaysLinkToLastBuild: true,
+                                   keepAll: true,
+                                   reportDir: 'target/jmeter/reports',
+                                   reportFiles: 'index.html',
+                                   reportName: 'Performance Test Report'
+                               ])
+                           }
+                       }
+                   }
+               }
+           }
+           post {
+               always {
+                   junit(
+                       allowEmptyResults: true,
+                       keepLongStdio: true,
+                       testResults: '**/target/surefire-reports/TEST-*.xml',
+                       skipMarkingBuildUnstable: true
+                   )
+               }
+               failure {
+                   script {
+                       def testReports = findFiles(glob: '**/target/surefire-reports/*.txt')
+                       testReports.each { report ->
+                           echo "Test Failure Details from ${report.path}:"
+                           sh "cat ${report.path}"
+                       }
+                       archiveArtifacts(
+                           artifacts: '**/target/surefire-reports/*.txt',
+                           allowEmptyArchive: true
+                       )
+                   }
+               }
+           }
+       }
 
-            publishHTML([
-                allowMissing: false,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'car/target/site/jacoco',
-                reportFiles: 'index.html',
-                reportName: 'Coverage Report'
-            ])
-        }
-    }
+       stage('Performance Test Results') {
+           steps {
+               script {
+                   dir('car') {
+                       def performanceReport = readFile('target/jmeter/results/statistics.json')
+                       def stats = readJSON text: performanceReport
+
+                       echo """Performance Test Summary:
+                           RestTemplate Average Response Time: ${stats.RestTemplate.mean} ms
+                           FeignClient Average Response Time: ${stats.FeignClient.mean} ms
+                           WebClient Average Response Time: ${stats.WebClient.mean} ms
+                       """
+                   }
+               }
+           }
+       }
+
+       stage('Build Docker Images') {
+           steps {
+               script {
+                   def services = ['car', 'client', 'gateway', 'server_eureka']
+                   services.each { service ->
+                       dir(service) {
+                           sh """
+                               docker build \
+                                   -t ${DOCKER_REGISTRY}/${service}:${VERSION} \
+                                   -f ../docker/${service}/Dockerfile .
+                           """
+                       }
+                   }
+               }
+           }
+       }
+
+       stage('Deploy') {
+           steps {
+               withKubeConfig([credentialsId: 'kubeconfig']) {
+                   sh '''
+                       kubectl apply -f k8s/services/namespace.yaml
+                       kubectl apply -f k8s/rbac/
+                       kubectl apply -f k8s/services/
+                       kubectl apply -f k8s/deployments/
+                   '''
+               }
+           }
+       }
+   }
+
+   post {
+       always {
+           cleanWs()
+       }
+       success {
+           echo 'Pipeline completed successfully!'
+       }
+       failure {
+           echo 'Pipeline failed! Check test reports and logs for details.'
+           emailext (
+               subject: "Pipeline Failed: ${currentBuild.fullDisplayName}",
+               body: "Pipeline failure in build ${env.BUILD_URL}",
+               recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+           )
+       }
+       unstable {
+           echo 'Pipeline is unstable. Check test results.'
+       }
+   }
 }
