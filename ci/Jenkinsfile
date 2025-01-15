@@ -1,23 +1,37 @@
 pipeline {
     agent any
 
-    tools {
-        jdk 'JDK 17'
-        maven 'Maven_3.9.9'
+    stages {
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage('Performance Tests') {
+            steps {
+                sh 'mvn verify -Pperformance-tests'
+                junit '**/target/jmeter/results/*.xml'
+            }
+        }
     }
 
-    stages {
-        stage('Test') {
-            steps {
-                dir('car') {
-                    sh 'mvn clean test -Dspring.profiles.active=test -B'
-                }
-            }
-            post {
-                always {
-                    junit '**/target/surefire-reports/*.xml'
-                }
-            }
+    post {
+        always {
+            publishHTML([
+                allowMissing: false,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'target/jmeter/reports',
+                reportFiles: 'index.html',
+                reportName: 'Performance Test Report'
+            ])
         }
     }
 }

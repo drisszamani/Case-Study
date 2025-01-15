@@ -6,8 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,27 +19,30 @@ public class ComparisonTestService {
     private final String BASE_URL = "http://localhost:8888/SERVICE-CLIENT/api/client";
 
     public Map<String, Object> compareAllMethods() {
-        Map<String, Object> results = new HashMap<>();
+        Map<String, Object> comparison = new HashMap<>();
 
-        // Test RestTemplate
+        // Measure RestTemplate performance
         long startTime = System.currentTimeMillis();
-        results.put("RestTemplate_Response", restTemplate.getForObject(BASE_URL, Client[].class));
-        results.put("RestTemplate_Time", System.currentTimeMillis() - startTime + "ms");
+        restTemplate.getForObject(BASE_URL, Client[].class);
+        long restTemplateTime = System.currentTimeMillis() - startTime;
+        comparison.put("RestTemplate_Time", restTemplateTime);
 
-        // Test FeignClient
+        // Measure FeignClient performance
         startTime = System.currentTimeMillis();
-        results.put("FeignClient_Response", feignClient.findAll());
-        results.put("FeignClient_Time", System.currentTimeMillis() - startTime + "ms");
+        feignClient.findAll();
+        long feignTime = System.currentTimeMillis() - startTime;
+        comparison.put("FeignClient_Time", feignTime);
 
-        // Test WebClient
+        // Measure WebClient performance
         startTime = System.currentTimeMillis();
-        results.put("WebClient_Response", webClient.get()
+        webClient.get()
                 .uri("/api/client")
                 .retrieve()
                 .bodyToMono(Client[].class)
-                .block());
-        results.put("WebClient_Time", System.currentTimeMillis() - startTime + "ms");
+                .block();
+        long webClientTime = System.currentTimeMillis() - startTime;
+        comparison.put("WebClient_Time", webClientTime);
 
-        return results;
+        return comparison;
     }
 }

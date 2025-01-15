@@ -6,6 +6,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class WebClientConfig {
+
     @Bean
     public WebClient.Builder webClientBuilder() {
         return WebClient.builder();
@@ -13,6 +14,8 @@ public class WebClientConfig {
 
     @Bean
     public WebClient webClient(WebClient.Builder webClientBuilder) {
-        return webClientBuilder.baseUrl("http://localhost:8888/SERVICE-CLIENT").build();
+        return webClientBuilder
+                .baseUrl("http://localhost:8888/SERVICE-CLIENT")
+                .build();
     }
 }
