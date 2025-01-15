@@ -1,49 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jmeterTestPlan version="1.2" properties="5.0">
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.5">
   <hashTree>
-    <TestPlan guiclass="TestPlanGui" testname="Client Service Performance Test">
-      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments">
-        <collectionProp name="Arguments.arguments">
-          <elementProp name="baseUrl" elementType="Argument">
-            <stringProp name="Argument.name">baseUrl</stringProp>
-            <stringProp name="Argument.value">${__P(baseUrl,http://localhost:8888)}</stringProp>
-          </elementProp>
-          <elementProp name="threads" elementType="Argument">
-            <stringProp name="Argument.name">threads</stringProp>
-            <stringProp name="Argument.value">${__P(threads,10)}</stringProp>
-          </elementProp>
-          <elementProp name="iterations" elementType="Argument">
-            <stringProp name="Argument.name">iterations</stringProp>
-            <stringProp name="Argument.value">${__P(iterations,100)}</stringProp>
-          </elementProp>
-        </collectionProp>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Car Service Performance Test" enabled="true">
+      <stringProp name="TestPlan.comments"></stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
       </elementProp>
     </TestPlan>
     <hashTree>
-      <ThreadGroup guiclass="ThreadGroupGui" testname="Client API Tests">
-        <elementProp name="ThreadGroup.main_controller" elementType="LoopController">
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Client Performance Tests" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">${iterations}</stringProp>
+          <stringProp name="LoopController.loops">10</stringProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">${threads}</stringProp>
+        <stringProp name="ThreadGroup.num_threads">5</stringProp>
         <stringProp name="ThreadGroup.ramp_time">1</stringProp>
         <boolProp name="ThreadGroup.scheduler">false</boolProp>
         <stringProp name="ThreadGroup.duration"></stringProp>
         <stringProp name="ThreadGroup.delay"></stringProp>
       </ThreadGroup>
       <hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testname="RestTemplate Test">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="RestTemplate Test" enabled="true">
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" enabled="true">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
+          <stringProp name="HTTPSampler.domain">${__P(jmeter.target.host,localhost)}</stringProp>
+          <stringProp name="HTTPSampler.port">${__P(jmeter.target.port,8888)}</stringProp>
+          <stringProp name="HTTPSampler.protocol">http</stringProp>
           <stringProp name="HTTPSampler.path">/api/client</stringProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
         </HTTPSamplerProxy>
         <hashTree/>
-        
-        <ResultCollector guiclass="SummaryReport" testname="Summary Report">
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
@@ -73,7 +67,6 @@
               <sentBytes>true</sentBytes>
               <url>true</url>
               <threadCounts>true</threadCounts>
-              <sampleCount>true</sampleCount>
               <idleTime>true</idleTime>
               <connectTime>true</connectTime>
             </value>
